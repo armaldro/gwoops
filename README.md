@@ -91,10 +91,38 @@ what makes photos file themselves.
 
 ## Deploying to Vercel
 
+### Monorepo layout — two settings that are not optional
+
+This repo is npm workspaces with two deployables. Vercel needs pointing at the
+right one, and the environment variables need the right *type*.
+
+**1. Root Directory.** The web app lives at `apps/web`, not the repo root. In
+Vercel → Settings → Build & Deployment → **Root Directory**, set `apps/web`.
+Without it the build fails with `routes-manifest.json couldn't be found`,
+because Vercel looks for `.next` at the repo root.
+
+**2. `NEXT_PUBLIC_*` variables must NOT be marked Sensitive.** Vercel's
+sensitive variables are withheld from the build step, so Next.js inlines an
+empty string and the app reports itself unconfigured — with no error, since an
+empty string is a valid value. Symptom: the shipped bundle contains
+`supabaseUrl: () => l("", "NEXT_PUBLIC_SUPABASE_URL")`.
+
+| Variable | Type |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | plain — it ships in the browser bundle regardless |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | plain — public by design |
+| `NEXT_PUBLIC_SITE_URL` | plain |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Sensitive** — server only |
+| `ANTHROPIC_API_KEY` | **Sensitive** — server only |
+| `CRON_SECRET` | **Sensitive** — server only |
+
+`SEED_ALLOWED_EMAILS` and `SEED_HOUSEHOLD_NAME` are read only by
+`scripts/bootstrap.mjs`, which runs locally. They do nothing in Vercel.
+
 ### First-time setup
 
 1. Push this branch, then in Vercel: **Add New → Project → Import** `armaldro/gwoops`.
-2. Framework preset is detected as Next.js; no build settings to change.
+2. Set the Root Directory to `apps/web` (see above). Framework is detected as Next.js.
 3. Add every variable from `.env.example` under **Settings → Environment
    Variables**, for Production *and* Preview. Set `NEXT_PUBLIC_SITE_URL` to your
    real origin (`https://gwoops.com`).
