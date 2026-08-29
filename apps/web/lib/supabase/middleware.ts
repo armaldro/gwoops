@@ -29,13 +29,8 @@ function redirectTo(request: NextRequest, pathname: string, error?: string) {
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Never null: env.ts falls back to baked-in public defaults.
   const config = publicEnv.supabaseConfig()
-  if (!config) {
-    // Misconfigured deployment. Serve /login so the operator sees the reason
-    // rather than a platform error page.
-    if (isPublic(pathname)) return NextResponse.next({ request })
-    return redirectTo(request, '/login', 'not-configured')
-  }
 
   try {
     let response = NextResponse.next({ request })

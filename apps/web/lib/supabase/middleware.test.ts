@@ -1,20 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { NextRequest } from 'next/server'
 import { updateSession } from './middleware'
+import { publicEnv } from '@/lib/env'
 
 /**
- * Regression tests for the outage.
+ * Regression tests for the two configuration outages.
  *
- * The middleware used to read its config through a helper that threw on a
- * missing variable. Because middleware runs on every request, that throw
- * became MIDDLEWARE_INVOCATION_FAILED — a 500 on the entire site, /login
- * included, so the deployment could not even report what was wrong.
+ * First outage: the middleware read its config through a helper that threw on
+ * a missing variable. Middleware runs on every request, so that throw became
+ * MIDDLEWARE_INVOCATION_FAILED — a 500 on the entire site, /login included.
  *
- * The contract these lock in: with configuration absent, updateSession never
- * throws, and always lands somewhere that can explain itself.
+ * Second failure mode: Vercel "Sensitive" env vars are withheld from the
+ * build step, so NEXT_PUBLIC_* inlined as "" — present but empty. env.ts now
+ * bakes in the public Supabase URL and publishable key as defaults, and
+ * treats empty strings as absent.
+ *
+ * The contract these lock in: updateSession never throws, always lands
+ * somewhere that can explain itself, and configuration is never null.
  */
 
 const SUPABASE_VARS = [
+  'SUPABASE_URL',
+  'SUPABASE_ANON_KEY',
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_ANON_KEY',
 ] as const
@@ -39,22 +46,55 @@ afterEach(() => {
   }
 })
 
-describe('updateSession with no Supabase configuration', () => {
+describe('configuration resolution', () => {
+  it('is never null: baked defaults apply when no env vars are set', () => {
+    const config = publicEnv.supabaseConfig()
+    expect(config.url).toMatch(/^https:\/\/.+\.supabase\.co$/)
+    expect(config.anonKey).not.toBe('')
+  })
+
+  it('treats empty strings as absent (Sensitive-var build inlining)', () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = ''
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = ''
+    const config = publicEnv.supabaseConfig()
+    expect(config.url).toMatch(/^https:\/\/.+\.supabase\.co$/)
+    expect(config.anonKey).not.toBe('')
+  })
+
+  it('lets env vars override the defaults', () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'override-key'
+    const config = publicEnv.supabaseConfig()
+    expect(config.url).toBe('https://example.supabase.co')
+    expect(config.anonKey).toBe('override-key')
+  })
+})
+
+describe('updateSession with Supabase unreachable', () => {
+  beforeEach(() => {
+    // A syntactically valid but unroutable origin, so the auth call fails
+    // without touching the network beyond the loopback interface.
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://127.0.0.1:1'
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
+  })
+
   it('does not throw on a protected route', async () => {
     await expect(updateSession(request('/inventory'))).resolves.toBeDefined()
   })
 
-  it('redirects a protected route to the login page with a reason', async () => {
+  it('degrades a protected route to the login page, keeping the destination', async () => {
+    // supabase-js absorbs the network failure and reports "no user", so this
+    // takes the ordinary unauthenticated path rather than the catch branch.
     const response = await updateSession(request('/inventory'))
     expect(response.status).toBe(307)
 
     const location = new URL(response.headers.get('location')!)
     expect(location.pathname).toBe('/login')
-    expect(location.searchParams.get('error')).toBe('not-configured')
+    expect(location.searchParams.get('next')).toBe('/inventory')
   })
 
   it('serves /login itself rather than redirecting it in a loop', async () => {
-    // The failure that made the outage unexplainable: if /login also
+    // The failure that made the first outage unexplainable: if /login also
     // redirects, there is nowhere left to render the reason.
     const response = await updateSession(request('/login'))
     expect(response.status).toBe(200)
@@ -67,19 +107,5 @@ describe('updateSession with no Supabase configuration', () => {
 
   it('does not throw on an API route either', async () => {
     await expect(updateSession(request('/api/chat'))).resolves.toBeDefined()
-  })
-})
-
-describe('updateSession with configuration present but Supabase unreachable', () => {
-  beforeEach(() => {
-    // A syntactically valid but unroutable origin, so the auth call fails.
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://127.0.0.1:1'
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
-  })
-
-  it('degrades to the login page instead of a 500', async () => {
-    const response = await updateSession(request('/inventory'))
-    expect(response.status).toBe(307)
-    expect(new URL(response.headers.get('location')!).pathname).toBe('/login')
   })
 })

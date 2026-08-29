@@ -1,8 +1,30 @@
 /**
- * Environment access with a clear failure message. Next.js inlines
- * NEXT_PUBLIC_* at build time, so those must be referenced literally rather
- * than through a dynamic index.
+ * Environment access.
+ *
+ * The Supabase URL and publishable (anon) key are public by design: they ship
+ * in every browser bundle, and the data behind them is protected by RLS and
+ * the signup allowlist — not by hiding these strings. They are therefore baked
+ * in as defaults so a deployment works with no environment variables at all.
+ *
+ * Environment variables, when present and non-empty, still override the
+ * defaults (SUPABASE_URL beats NEXT_PUBLIC_SUPABASE_URL beats the default).
+ * Empty strings are ignored: Vercel withholds "Sensitive" values from the
+ * build step, which inlines NEXT_PUBLIC_* as "" — the failure mode that took
+ * the site down before.
  */
+const DEFAULTS = {
+  supabaseUrl: 'https://ywkarxdiaptbuwsaqvge.supabase.co',
+  supabaseAnonKey: 'sb_publishable_DS6xEKiIpcwH0VKCohsWqg_ZaCi0vtp',
+  siteUrl: 'https://www.gwoops.com',
+}
+
+function first(...values: Array<string | undefined>): string | undefined {
+  for (const value of values) {
+    if (value) return value
+  }
+  return undefined
+}
+
 function required(value: string | undefined, name: string): string {
   if (!value) {
     throw new Error(
@@ -19,30 +41,26 @@ export interface SupabaseConfig {
 
 export const publicEnv = {
   supabaseUrl: () =>
-    required(process.env.NEXT_PUBLIC_SUPABASE_URL, 'NEXT_PUBLIC_SUPABASE_URL'),
-  supabaseAnonKey: () =>
-    required(
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-    ),
-  siteUrl: () => process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
+    first(process.env.SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_URL) ??
+    DEFAULTS.supabaseUrl,
 
-  /**
-   * Non-throwing variant, for the one caller that must never crash.
-   *
-   * Middleware runs on every request, so a throw there is a 500 on the whole
-   * site — including the page that would explain the misconfiguration. It asks
-   * whether Supabase is configured and degrades when it is not, rather than
-   * being handed an exception.
-   *
-   * Note for operators: NEXT_PUBLIC_* values are inlined at build time, so
-   * these read as undefined until a *redeploy* follows setting them.
-   */
-  supabaseConfig: (): SupabaseConfig | null => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    return url && anonKey ? { url, anonKey } : null
-  },
+  supabaseAnonKey: () =>
+    first(
+      process.env.SUPABASE_ANON_KEY,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    ) ?? DEFAULTS.supabaseAnonKey,
+
+  siteUrl: () =>
+    first(process.env.NEXT_PUBLIC_SITE_URL) ??
+    (process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3000'
+      : DEFAULTS.siteUrl),
+
+  /** Same values, bundled for the middleware. Never throws, never null. */
+  supabaseConfig: (): SupabaseConfig => ({
+    url: publicEnv.supabaseUrl(),
+    anonKey: publicEnv.supabaseAnonKey(),
+  }),
 }
 
 export const serverEnv = {

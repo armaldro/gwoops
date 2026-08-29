@@ -2,26 +2,54 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { publicEnv } from '@/lib/env'
 
 type State =
   | { status: 'idle' }
-  | { status: 'sending' }
+  | { status: 'signing-in' }
+  | { status: 'sending-link' }
   | { status: 'sent'; email: string }
   | { status: 'error'; message: string }
 
 export function LoginForm({ next }: { next?: string }) {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [state, setState] = useState<State>({ status: 'idle' })
+
+  const busy = state.status === 'signing-in' || state.status === 'sending-link'
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     const trimmed = email.trim().toLowerCase()
-    if (!trimmed) return
+    if (!trimmed || !password) return
 
-    setState({ status: 'sending' })
+    setState({ status: 'signing-in' })
 
-    const redirectTo = new URL('/auth/callback', publicEnv.siteUrl())
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInWithPassword({
+      email: trimmed,
+      password,
+    })
+
+    if (error) {
+      setState({ status: 'error', message: error.message })
+      return
+    }
+
+    // Full navigation, not a router push: the middleware must see the fresh
+    // session cookies before it will let an app route render.
+    window.location.assign(next && next.startsWith('/') ? next : '/')
+  }
+
+  async function sendMagicLink() {
+    const trimmed = email.trim().toLowerCase()
+    if (!trimmed) {
+      setState({ status: 'error', message: 'Enter your email address first.' })
+      return
+    }
+
+    setState({ status: 'sending-link' })
+
+    const redirectTo = new URL('/auth/callback', window.location.origin)
     if (next) redirectTo.searchParams.set('next', next)
 
     const supabase = createClient()
@@ -80,6 +108,19 @@ export function LoginForm({ next }: { next?: string }) {
         className="field mt-2"
       />
 
+      <label htmlFor="password" className="mt-4 block text-sm font-medium">
+        Password
+      </label>
+      <input
+        id="password"
+        type="password"
+        autoComplete="current-password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="••••••••"
+        className="field mt-2"
+      />
+
       {state.status === 'error' && (
         <p role="alert" className="mt-3 text-sm" style={{ color: 'var(--danger)' }}>
           {state.message}
@@ -88,11 +129,23 @@ export function LoginForm({ next }: { next?: string }) {
 
       <button
         type="submit"
-        disabled={state.status === 'sending'}
+        disabled={busy}
         className="mt-4 w-full rounded-lg px-4 py-2.5 text-sm font-medium transition disabled:opacity-60"
         style={{ background: 'var(--accent)', color: 'var(--accent-ink)' }}
       >
-        {state.status === 'sending' ? 'Sending…' : 'Email me a sign-in link'}
+        {state.status === 'signing-in' ? 'Signing in…' : 'Sign in'}
+      </button>
+
+      <button
+        type="button"
+        disabled={busy}
+        onClick={sendMagicLink}
+        className="mt-3 w-full text-center text-sm underline underline-offset-4 disabled:opacity-60"
+        style={{ color: 'var(--accent)' }}
+      >
+        {state.status === 'sending-link'
+          ? 'Sending…'
+          : 'Email me a sign-in link instead'}
       </button>
     </form>
   )
