@@ -1,13 +1,16 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/primitives'
 import { ToolCard } from '@/components/chat/tool-card'
+import { PlanPane } from '@/components/chat/plan-pane'
 
 /** Mirrors the server's StreamEvent, minus the parts the UI does not use. */
 type StreamEvent =
   | { type: 'text'; text: string }
   | { type: 'tool'; name: string; input: unknown }
+  | { type: 'plan'; planId: string }
   | { type: 'done'; messages: unknown[] }
   | { type: 'error'; message: string }
 
@@ -22,11 +25,15 @@ export function ChatPanel({
   canWrite,
   homeNames,
   hasItems,
+  initialPlanId = null,
 }: {
   canWrite: boolean
   homeNames: string[]
   hasItems: boolean
+  /** Most recent draft packing list, shown in the side pane when unfolded. */
+  initialPlanId?: string | null
 }) {
+  const [planId, setPlanId] = useState<string | null>(initialPlanId)
   const [turns, setTurns] = useState<Turn[]>([])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
@@ -116,14 +123,25 @@ export function ChatPanel({
       })
     })
 
+    // A saved list is worth surfacing beside the conversation rather than
+    // only as a line in the transcript — you read the plan while still
+    // discussing it. The id arrives on the stream, so there is nothing to poll.
+    if (event.type === 'plan') setPlanId(event.planId)
     if (event.type === 'done') historyRef.current = event.messages
   }
 
   const suggestions = buildSuggestions(homeNames, canWrite)
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-4">
+    <div
+      className={
+        planId
+          ? 'grid gap-6 fold:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]'
+          : 'mx-auto max-w-3xl'
+      }
+    >
+      <div className="min-w-0 space-y-4">
+        <div className="space-y-4">
         {turns.length === 0 && (
           <div className="card p-5">
             <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>
@@ -138,7 +156,7 @@ export function ChatPanel({
                   type="button"
                   disabled={!hasItems}
                   onClick={() => void ask(suggestion)}
-                  className="rounded-full border px-3 py-1.5 text-xs transition disabled:opacity-50"
+                  className="touch-target rounded-full border px-3 text-xs transition disabled:opacity-50"
                   style={{ color: 'var(--ink-muted)' }}
                 >
                   {suggestion}
@@ -201,7 +219,7 @@ export function ChatPanel({
           event.preventDefault()
           void ask(input)
         }}
-        className="sticky bottom-20 flex gap-2 sm:bottom-4"
+        className="hinge-safe sticky bottom-20 flex gap-2 fold:bottom-4"
       >
         <input
           value={input}
@@ -216,10 +234,27 @@ export function ChatPanel({
         </Button>
       </form>
 
-      {!canWrite && (
-        <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
-          Your account is read-only, so the assistant can plan but not save packing lists.
-        </p>
+        {!canWrite && (
+          <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+            Your account is read-only, so the assistant can plan but not save packing lists.
+          </p>
+        )}
+      </div>
+
+      {planId && (
+        <aside className="min-w-0 fold:sticky fold:top-4 fold:max-h-[calc(100dvh-2rem)] fold:overflow-y-auto fold:overscroll-contain">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h2 className="font-display text-base">The plan</h2>
+            <Link
+              href={`/packing/${planId}`}
+              className="touch-target text-xs"
+              style={{ color: 'var(--accent)' }}
+            >
+              Open
+            </Link>
+          </div>
+          <PlanPane planId={planId} />
+        </aside>
       )}
     </div>
   )

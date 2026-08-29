@@ -142,7 +142,7 @@ export function ReviewSheet({
         </div>
       )}
 
-      <div className="grid gap-5 p-4 sm:grid-cols-[200px_1fr]">
+      <div className="grid gap-5 p-4 sm:grid-cols-[180px_1fr] fold:grid-cols-[minmax(0,15rem)_1fr]">
         <div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -390,7 +390,7 @@ export function ReviewSheet({
                 </p>
               )}
 
-              <div className="flex flex-wrap gap-2">
+              <div className="hinge-safe flex flex-wrap gap-2">
                 <Button onClick={handleSave} disabled={pending}>
                   {pending ? 'Saving…' : total > 1 ? 'Save & next' : 'Save item'}
                 </Button>

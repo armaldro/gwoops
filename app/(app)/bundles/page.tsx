@@ -64,7 +64,7 @@ export default async function BundlesPage() {
           />
         </div>
       ) : (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 fold:grid-cols-3">
           {rows.map((bundle) => (
             <Link key={bundle.id} href={`/bundles/${bundle.id}`} className="card p-4 transition hover:-translate-y-0.5">
               <div className="flex items-baseline justify-between gap-2">

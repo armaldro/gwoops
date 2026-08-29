@@ -75,7 +75,7 @@ export default async function HomePage() {
         <div className="space-y-8">
           <section>
             <h2 className="mb-3 font-display text-lg">Where things are</h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 fold:grid-cols-3">
               {summaries.map((summary) => {
                 const tone = locationColorVar(summary.location.color)
                 const share = total ? Math.round((summary.itemCount / total) * 100) : 0
@@ -186,7 +186,7 @@ export default async function HomePage() {
                 See everything
               </Link>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 fold:grid-cols-4">
               {recent.map((item) => (
                 <ItemCard key={item.id} item={item} />
               ))}

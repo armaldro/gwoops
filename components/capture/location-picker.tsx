@@ -115,7 +115,7 @@ export function LocationPicker({
                   setExpanded(false)
                 }}
                 aria-pressed={active}
-                className="rounded-full border px-3 py-1.5 text-xs font-medium transition"
+                className="touch-target rounded-full border px-3 text-xs font-medium transition"
                 style={{
                   borderColor: active ? tone : 'var(--border)',
                   background: active ? 'var(--accent-soft)' : 'var(--surface)',
@@ -167,7 +167,7 @@ export function LocationPicker({
             <button
               type="button"
               onClick={() => setAdding(true)}
-              className="rounded-full border border-dashed px-3 py-1.5 text-xs"
+              className="touch-target rounded-full border border-dashed px-3 text-xs"
               style={{ color: 'var(--ink-muted)' }}
             >
               + New home{deviceFix ? ' here' : ''}

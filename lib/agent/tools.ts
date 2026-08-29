@@ -12,6 +12,12 @@ type Db = SupabaseClient<Database>
 interface ToolContext {
   supabase: Db
   session: Session
+  /**
+   * Called when create_packing_list actually persists something, so the route
+   * can push the id down the stream and the UI can show the plan beside the
+   * conversation. Avoids the client having to poll for what just happened.
+   */
+  onPackingListCreated?: (packingListId: string) => void
 }
 
 /** Rows the tools work from, loaded once per query. */
@@ -494,6 +500,8 @@ export function buildTools(ctx: ToolContext) {
       if (itemsError) {
         return `The list was created but its items failed to save: ${itemsError.message}.`
       }
+
+      ctx.onPackingListCreated?.(list.id)
 
       return asJson({
         saved: true,

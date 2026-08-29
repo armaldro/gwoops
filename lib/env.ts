@@ -12,6 +12,11 @@ function required(value: string | undefined, name: string): string {
   return value
 }
 
+export interface SupabaseConfig {
+  url: string
+  anonKey: string
+}
+
 export const publicEnv = {
   supabaseUrl: () =>
     required(process.env.NEXT_PUBLIC_SUPABASE_URL, 'NEXT_PUBLIC_SUPABASE_URL'),
@@ -21,6 +26,23 @@ export const publicEnv = {
       'NEXT_PUBLIC_SUPABASE_ANON_KEY',
     ),
   siteUrl: () => process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
+
+  /**
+   * Non-throwing variant, for the one caller that must never crash.
+   *
+   * Middleware runs on every request, so a throw there is a 500 on the whole
+   * site — including the page that would explain the misconfiguration. It asks
+   * whether Supabase is configured and degrades when it is not, rather than
+   * being handed an exception.
+   *
+   * Note for operators: NEXT_PUBLIC_* values are inlined at build time, so
+   * these read as undefined until a *redeploy* follows setting them.
+   */
+  supabaseConfig: (): SupabaseConfig | null => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    return url && anonKey ? { url, anonKey } : null
+  },
 }
 
 export const serverEnv = {

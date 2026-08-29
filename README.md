@@ -23,6 +23,7 @@ Only allowlisted email addresses can sign in. There is no public signup.
 | **Bundles** | Outfits, kits and storage bins. A bundle stays together when homes are rebalanced |
 | **Extras** | Insurance-shaped CSV/JSON export, warranty & expiry reminders, printable QR bin labels |
 | **Design** | Warm editorial palette, one colour per home, full dark mode, installs to a phone home screen |
+| **Foldables** | Bottom tabs folded; navigation rail and two-pane master-detail unfolded; hands-free camera in flex mode |
 
 Categories with tailored fields: **clothing, shoes, electronics, kitchen, home &
 tools, documents & valuables**. Toys/kids works under the generic schema — a
@@ -97,6 +98,12 @@ what makes photos file themselves.
 3. Add every variable from `.env.example` under **Settings → Environment
    Variables**, for Production *and* Preview. Set `NEXT_PUBLIC_SITE_URL` to your
    real origin (`https://gwoops.com`).
+
+   > **`NEXT_PUBLIC_*` variables are inlined at build time.** Saving them in
+   > Vercel changes nothing until you **redeploy** — the running build still
+   > has `undefined` baked in. This is the most common cause of a deployment
+   > that cannot reach Supabase. If the app is misconfigured it now says so on
+   > the sign-in page instead of returning a 500.
 4. In Supabase → **Authentication → URL Configuration**, add
    `https://gwoops.com/auth/callback` to the redirect allowlist. Magic links
    fail silently without this.
@@ -161,6 +168,43 @@ This is a Vercel account setting, separate from the app's own allowlist:
 Removing someone from Vercel does **not** remove their access to the app itself.
 That is governed by `allowed_emails` — revoke them in **Settings → Who can get
 in** inside Nest.
+
+---
+
+## Foldables and small screens
+
+Layouts target the *device class*, never a model number, so this holds for the
+Find N5, the Fold line, Pixel Fold and whatever ships next.
+
+| Width | Device | Navigation | Grid |
+|---|---|---|---|
+| `< 640` | cover screen, phone portrait | bottom tabs | 2 columns |
+| `640–719` | large phone | bottom tabs | 3 columns |
+| `fold:` `720–1023` | unfolded inner screen, phone landscape | left rail | 4 columns |
+| `lg:` `1024+` | desktop | left rail | 5 columns |
+
+`720px` is the boundary because the unfolded inner screen of a book foldable
+lands somewhere in 700–900px CSS width with a near-square aspect. It also
+catches a phone in landscape, where a rail is right for a different reason —
+there, vertical space is the scarce axis.
+
+**Unfolding gives you two panes.** Inventory grid beside item detail, packing
+list beside the item you are ticking off, conversation beside the plan the
+assistant just wrote. It is URL-driven (`?item=<id>`) and switched purely by
+CSS, so the back button and link sharing behave identically folded and
+unfolded, and there is no client-side breakpoint detection.
+
+**Half-folded is a supported posture.** Under
+`@media (vertical-viewport-segments: 2)` the camera puts its viewfinder in the
+upper segment and the shutter in the lower, so the phone stands on a table and
+photographs a shelf hands-free. The Viewport Segments API is Chromium-only, so
+this is strictly progressive enhancement — every layout is already correct from
+the width rules alone.
+
+Folding also reconfigures the camera underneath the page: Android tears the
+track down without firing an error, and the viewfinder silently goes black.
+`capture-studio.tsx` watches for that (`videoWidth === 0`, or an ended track)
+and re-acquires the stream.
 
 ---
 

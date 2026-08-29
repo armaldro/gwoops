@@ -29,12 +29,14 @@ export function PackingChecklist({
   lines,
   locations,
   canWrite,
+  selectedItemId = null,
 }: {
   listId: string
   status: PackingStatus
   lines: PackingLine[]
   locations: LocationRow[]
   canWrite: boolean
+  selectedItemId?: string | null
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -133,14 +135,14 @@ export function PackingChecklist({
 
             <ul className="card divide-y">
               {group.map((line) => (
-                <li key={line.id} className="flex items-start gap-3 px-4 py-3">
+                <li key={line.id} className="flex min-h-14 items-start gap-3 px-4 py-3">
                   <input
                     id={`pack-${line.id}`}
                     type="checkbox"
                     checked={line.checked}
                     disabled={!canWrite || pending || status === 'draft'}
                     onChange={(e) => run(() => checkPackingItem(line.id, e.target.checked))}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-current"
+                    className="mt-0.5 h-5 w-5 shrink-0 accent-current"
                     style={{ color: tone }}
                   />
                   <label htmlFor={`pack-${line.id}`} className="min-w-0 flex-1 cursor-pointer">
@@ -161,9 +163,15 @@ export function PackingChecklist({
                   </label>
                   {line.itemId && (
                     <Link
-                      href={`/items/${line.itemId}`}
-                      className="shrink-0 text-xs underline underline-offset-4"
-                      style={{ color: 'var(--ink-muted)' }}
+                      href={`/packing/${listId}?item=${line.itemId}`}
+                      aria-current={line.itemId === selectedItemId ? 'true' : undefined}
+                      className="touch-target shrink-0 px-1 text-xs underline underline-offset-4"
+                      style={{
+                        color:
+                          line.itemId === selectedItemId
+                            ? 'var(--accent)'
+                            : 'var(--ink-muted)',
+                      }}
                     >
                       View
                     </Link>

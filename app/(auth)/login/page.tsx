@@ -9,6 +9,13 @@ const ERRORS: Record<string, string> = {
   'link-expired':
     'That sign-in link has expired or was already used. Request a fresh one.',
   denied: 'That email is not on the household allowlist.',
+  'not-configured':
+    'This deployment is missing its Supabase environment variables. Set them, ' +
+    'then redeploy — NEXT_PUBLIC_* values are baked in at build time, so saving ' +
+    'them alone is not enough.',
+  unavailable:
+    'Could not reach the authentication service. This is usually temporary — ' +
+    'try again in a moment.',
 }
 
 export default async function LoginPage({

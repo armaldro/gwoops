@@ -55,7 +55,7 @@ export function ItemActions({
                 type="button"
                 disabled={pending || here}
                 onClick={() => run(() => moveItem(itemId, location.id, 'Moved by hand'))}
-                className="rounded-full border px-3 py-1.5 text-xs font-medium transition disabled:opacity-100"
+                className="touch-target rounded-full border px-3 text-xs font-medium transition disabled:opacity-100"
                 style={{
                   borderColor: here ? tone : 'var(--border)',
                   background: here ? 'var(--accent-soft)' : 'var(--surface)',

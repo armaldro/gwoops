@@ -27,7 +27,7 @@ export default async function LocationsPage() {
           action={<LinkButton href="/settings">Add a home</LinkButton>}
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 fold:grid-cols-3">
           {summaries.map((summary) => (
             <Link
               key={summary.location.id}

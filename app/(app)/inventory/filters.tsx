@@ -206,7 +206,7 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className="shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition"
+      className="touch-target shrink-0 whitespace-nowrap rounded-full border px-3 text-xs font-medium transition"
       style={{
         borderColor: active ? color : 'var(--border)',
         background: active ? 'var(--accent-soft)' : 'var(--surface)',

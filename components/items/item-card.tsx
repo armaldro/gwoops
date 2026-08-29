@@ -8,15 +8,33 @@ import { locationColorVar } from '@/lib/colors'
  * Text only appears where the photo cannot answer the question — which home,
  * and the one or two attributes that distinguish near-identical things.
  */
-export function ItemCard({ item }: { item: ItemView }) {
+export function ItemCard({
+  item,
+  href,
+  selected = false,
+}: {
+  item: ItemView
+  /** Defaults to the item's own page; the two-pane grid points at ?item= instead. */
+  href?: string
+  selected?: boolean
+}) {
   const summary = summaryLine(item.categorySlug, item.attributes)
   const tone = locationColorVar(item.locationColor)
 
   return (
     <Link
-      href={`/items/${item.id}`}
+      href={href ?? `/items/${item.id}`}
+      aria-current={selected ? 'true' : undefined}
       className="group block overflow-hidden rounded-xl border transition hover:-translate-y-0.5"
-      style={{ background: 'var(--surface)', boxShadow: 'var(--shadow-card)' }}
+      style={{
+        background: 'var(--surface)',
+        boxShadow: 'var(--shadow-card)',
+        // The selected card has to stay findable in the grid while its detail
+        // occupies the other pane.
+        borderColor: selected ? tone : undefined,
+        outline: selected ? `2px solid ${tone}` : undefined,
+        outlineOffset: selected ? '-2px' : undefined,
+      }}
     >
       <div
         className="relative aspect-square overflow-hidden"

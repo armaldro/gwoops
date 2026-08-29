@@ -87,7 +87,7 @@ export function BundleEditor({
                     else setError(result.error ?? 'Could not move.')
                   })
                 }
-                className="rounded-full border px-3 py-1.5 text-xs font-medium"
+                className="touch-target rounded-full border px-3 text-xs font-medium"
                 style={{
                   borderColor: here ? tone : 'var(--border)',
                   background: here ? 'var(--accent-soft)' : 'var(--surface)',
@@ -142,16 +142,16 @@ export function BundleEditor({
           )}
         </div>
 
-        <ul className="max-h-[26rem] divide-y overflow-y-auto">
+        <ul className="scroll-contained max-h-[26rem] divide-y">
           {visible.slice(0, 200).map((item) => (
             <li key={item.id}>
-              <label className="flex cursor-pointer items-center gap-3 px-4 py-2.5">
+              <label className="flex min-h-14 cursor-pointer items-center gap-3 px-4 py-2.5">
                 <input
                   type="checkbox"
                   checked={selected.has(item.id)}
                   onChange={() => toggle(item.id)}
                   disabled={!canWrite}
-                  className="h-4 w-4 shrink-0"
+                  className="h-5 w-5 shrink-0"
                 />
                 <span className="min-w-0 flex-1 truncate text-sm">
                   <span aria-hidden className="mr-1.5">{item.categoryIcon}</span>

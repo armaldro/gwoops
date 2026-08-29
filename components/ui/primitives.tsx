@@ -130,7 +130,7 @@ export function Button({
     <button
       {...props}
       style={{ ...styles[variant], ...props.style }}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50 ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50 ${className}`}
     />
   )
 }
@@ -158,7 +158,7 @@ export function LinkButton({
     <Link
       href={href}
       style={style}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition ${className}`}
     >
       {children}
     </Link>

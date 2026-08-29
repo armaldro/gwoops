@@ -19,6 +19,8 @@ export const maxDuration = 300
 type StreamEvent =
   | { type: 'text'; text: string }
   | { type: 'tool'; name: string; input: unknown }
+  /** A packing list was saved; the UI opens it beside the conversation. */
+  | { type: 'plan'; planId: string }
   | { type: 'done'; messages: Anthropic.Beta.BetaMessageParam[] }
   | { type: 'error'; message: string }
 
@@ -47,7 +49,17 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createClient()
-  const tools = buildTools({ supabase, session })
+
+  // Filled in by the create_packing_list tool if it runs, then flushed to the
+  // client once the turn it happened in completes.
+  let createdPlanId: string | null = null
+  const tools = buildTools({
+    supabase,
+    session,
+    onPackingListCreated: (id) => {
+      createdPlanId = id
+    },
+  })
 
   const [{ data: homes }, { data: members }] = await Promise.all([
     supabase.from('locations').select('name, emoji, notes').order('sort_order'),
@@ -105,6 +117,11 @@ export async function POST(request: Request) {
             if (block.type === 'tool_use') {
               send({ type: 'tool', name: block.name, input: block.input })
             }
+          }
+
+          if (createdPlanId) {
+            send({ type: 'plan', planId: createdPlanId })
+            createdPlanId = null
           }
 
           // A paused turn is not resumed by the runner on its own; push the

@@ -343,39 +343,86 @@ function CameraView({
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [reacquiring, setReacquiring] = useState(false)
   const fallbackRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    let cancelled = false
+  const stop = useCallback(() => {
+    streamRef.current?.getTracks().forEach((t) => t.stop())
+    streamRef.current = null
+  }, [])
 
-    navigator.mediaDevices
-      ?.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
-      .then((stream) => {
-        if (cancelled) {
-          stream.getTracks().forEach((t) => t.stop())
-          return
-        }
-        streamRef.current = stream
-        if (videoRef.current) videoRef.current.srcObject = stream
+  const start = useCallback(async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError('This browser cannot open the camera. Pick a photo from your gallery instead.')
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
       })
-      .catch(() => {
-        if (!cancelled) {
-          setError(
-            'Camera access was refused. You can still pick a photo from your gallery.',
-          )
-        }
-      })
+      stop()
+      streamRef.current = stream
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        await videoRef.current.play().catch(() => {
+          // Autoplay can be refused; the poster frame is still correct and the
+          // user can tap to retry.
+        })
+      }
+      setError(null)
+    } catch {
+      setError('Camera access was refused. You can still pick a photo from your gallery.')
+    }
+  }, [stop])
+
+  useEffect(() => {
+    void start()
+    return stop
+  }, [start, stop])
+
+  /*
+   * Folding or unfolding reconfigures the camera underneath us. Android tears
+   * the track down without firing an error, so the element simply goes black —
+   * the most confusing possible failure in a camera-first app. There is no
+   * event for "the posture changed", so watch the two signals that do fire and
+   * check the one fact that matters: whether the video is still producing
+   * frames.
+   */
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+
+    const check = () => {
+      clearTimeout(timer)
+      timer = setTimeout(async () => {
+        const video = videoRef.current
+        if (!video || document.visibilityState !== 'visible') return
+
+        const track = streamRef.current?.getVideoTracks()[0]
+        const dead = !track || track.readyState === 'ended' || video.videoWidth === 0
+        if (!dead) return
+
+        setReacquiring(true)
+        await start()
+        setReacquiring(false)
+      }, 250)
+    }
+
+    window.addEventListener('resize', check)
+    window.addEventListener('orientationchange', check)
+    document.addEventListener('visibilitychange', check)
 
     return () => {
-      cancelled = true
-      streamRef.current?.getTracks().forEach((t) => t.stop())
-      streamRef.current = null
+      clearTimeout(timer)
+      window.removeEventListener('resize', check)
+      window.removeEventListener('orientationchange', check)
+      document.removeEventListener('visibilitychange', check)
     }
-  }, [])
+  }, [start])
 
   function shoot() {
     const video = videoRef.current
-    if (!video) return
+    if (!video || video.videoWidth === 0) return
 
     const canvas = document.createElement('canvas')
     canvas.width = video.videoWidth
@@ -385,7 +432,7 @@ function CameraView({
     canvas.toBlob(
       (blob) => {
         if (!blob) return
-        streamRef.current?.getTracks().forEach((t) => t.stop())
+        stop()
         onCapture(new File([blob], 'capture.jpg', { type: 'image/jpeg' }))
       },
       'image/jpeg',
@@ -399,9 +446,12 @@ function CameraView({
         <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>
           {error}
         </p>
-        <div className="flex justify-center gap-2">
+        <div className="flex flex-wrap justify-center gap-2">
           <Button onClick={() => fallbackRef.current?.click()}>Choose a photo</Button>
-          <Button variant="secondary" onClick={onCancel}>
+          <Button variant="secondary" onClick={() => void start()}>
+            Try the camera again
+          </Button>
+          <Button variant="ghost" onClick={onCancel}>
             Back
           </Button>
         </div>
@@ -421,10 +471,17 @@ function CameraView({
     )
   }
 
+  /*
+   * Flex mode: half-folded and standing on a table, the viewport is two
+   * stacked segments with the hinge between. Viewfinder in the top segment,
+   * controls in the bottom, and the phone photographs a shelf hands-free —
+   * which is what turns cataloguing fifteen pairs of shoes from a chore into
+   * something quick. Falls back to a normal stacked layout everywhere else.
+   */
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 flex-mode:flex flex-mode:h-dvh flex-mode:flex-col flex-mode:space-y-0">
       <div
-        className="relative overflow-hidden rounded-xl"
+        className="relative overflow-hidden rounded-xl flex-mode:flex-none flex-mode:rounded-none"
         style={{ background: '#000' }}
       >
         <video
@@ -432,10 +489,27 @@ function CameraView({
           autoPlay
           playsInline
           muted
-          className="aspect-[3/4] w-full object-cover sm:aspect-video"
+          className="aspect-[3/4] w-full object-cover fold:aspect-[4/3] flex-mode:h-[var(--segment-height)] flex-mode:aspect-auto"
+          style={
+            {
+              // Upper segment height when the API is available; the class above
+              // keeps a sane aspect ratio when it is not.
+              '--segment-height': 'env(viewport-segment-height 0 0, 50dvh)',
+            } as React.CSSProperties
+          }
         />
+        {reacquiring && (
+          <div
+            className="absolute inset-0 grid place-items-center text-sm"
+            style={{ background: 'rgb(0 0 0 / 0.55)', color: '#fff' }}
+            aria-live="polite"
+          >
+            Reopening the camera…
+          </div>
+        )}
       </div>
-      <div className="flex items-center justify-center gap-3">
+
+      <div className="flex items-center justify-center gap-3 flex-mode:flex-1 flex-mode:flex-col flex-mode:justify-center">
         <Button variant="secondary" onClick={onCancel}>
           Cancel
         </Button>

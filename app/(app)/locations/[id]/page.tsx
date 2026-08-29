@@ -134,7 +134,7 @@ export default async function LocationPage({
             action={<LinkButton href="/capture">Add an item</LinkButton>}
           />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 fold:grid-cols-4 lg:grid-cols-5">
             {items.map((item) => (
               <ItemCard key={item.id} item={item} />
             ))}
