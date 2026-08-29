@@ -1,0 +1,17 @@
+{
+  "name": "@nest/domain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./categories": "./src/categories.ts",
+    "./distribution": "./src/distribution.ts",
+    "./geo": "./src/geo.ts",
+    "./duplicates": "./src/duplicates.ts",
+    "./colors": "./src/colors.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

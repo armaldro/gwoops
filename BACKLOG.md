@@ -1,45 +1,27 @@
 # Backlog
 
-Deliberately deferred, with the reasoning, so nothing here is a surprise later.
+Superseded by [REQUIREMENTS.md](./REQUIREMENTS.md), which carries every item
+below as a numbered requirement with acceptance criteria and priority.
 
-## Toys, Kids & Baby Gear — tailored schema
+Kept only as a map from the old prose to the new IDs:
 
-The `toys` category exists and works today under the generic schema (type,
-brand, colours). What it does not have is its own attribute set. When it earns
-one, the fields to add in `lib/categories/schemas.ts` are:
+| Was | Now |
+|---|---|
+| Toys/kids tailored schema | FR-CAP-1 (the category exists; its attribute set is still generic) |
+| Barcode and QR scanning | FR-CAP-13 |
+| Receipt OCR | FR-CAP-14 |
+| Multi-photo items | FR-CAP-15 |
+| Native share target | FR-CAP-16 |
+| Per-home capacity limits | FR-PLAN-10 |
+| Household currency setting | Open question 4 |
+
+The toys attribute set, spelled out, since it is the one item that lost detail
+in the move. Add to `packages/domain/src/categories.ts`:
 
 - `age_range` — select: `0-6m`, `6-12m`, `1-2y`, `2-4y`, `4-6y`, `6-9y`, `9-12y`, `12+`
-- `set_pieces` — number, for anything that arrives as a set
+- `set_pieces` — number
 - `battery_type` — select: `AA`, `AAA`, `C`, `D`, `9V`, `built-in`, `none`
-- `safety_notes` — text: small parts, recalls, age warnings
-- `brand`, `character` — text, for the "we already have three of these" case
-- `balanceBy: ['type', 'age_range']` — so a rebalance does not send every
-  toddler toy to one house and every board game to the other
-
-Adding those fields is the whole change: the vision prompt, the review sheet and
-the inventory facets all read from that one definition.
-
-## Other candidates
-
-**Barcode and QR scanning on capture.** For electronics and packaged goods, a
-barcode resolves brand and model exactly rather than probably. Worth it once
-there are enough boxed items to matter.
-
-**Receipt OCR.** Photograph a receipt, get purchase date, price and warranty
-start filled in across several items at once. The single biggest lever on the
-insurance export being genuinely complete.
-
-**Native share target.** Register the PWA as a share target so a photo can go
-from the camera roll into Nest without opening the app first.
-
-**Per-home capacity limits.** The distribution algorithm already accepts
-weights; exposing "this flat only has one wardrobe" as a real constraint would
-let it refuse an over-stuffed plan rather than proposing one.
-
-**Multi-photo items.** The schema supports several photos per item
-(`item_photos`), and the detail page renders them, but capture only ever
-attaches one. Adding more from the item page is a small gap.
-
-**Household currency setting.** `SGD` is currently the default in two places
-(the recognition prompt and the assistant context). It should be a column on
-`households`.
+- `safety_notes` — text
+- `character` — text
+- `balanceBy: ['type', 'age_range']`, so a rebalance does not send every
+  toddler toy to one home and every board game to the other
