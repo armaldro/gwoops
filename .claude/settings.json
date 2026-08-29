@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "mcp__Vercel__list_teams",
+      "mcp__Vercel__list_projects",
+      "mcp__Vercel__get_project",
+      "mcp__Vercel__list_deployments",
+      "mcp__Vercel__get_deployment",
+      "mcp__Vercel__get_deployment_build_logs",
+      "mcp__Vercel__get_runtime_logs",
+      "mcp__Vercel__get_runtime_errors",
+      "mcp__Vercel__get_project_deployment_protection",
+      "mcp__Vercel__get_web_analytics",
+      "mcp__Vercel__get_git_deployment_context",
+      "mcp__Vercel__get_access_to_vercel_url",
+      "mcp__Vercel__web_fetch_vercel_url",
+      "mcp__Vercel__search_vercel_documentation",
+      "mcp__Vercel__list_agent_runs",
+      "mcp__Vercel__list_agent_run_projects",
+      "mcp__Vercel__get_agent_run",
+      "mcp__Vercel__get_agent_run_trace",
+      "mcp__Vercel__get_domain_order",
+      "mcp__Vercel__list_toolbar_threads",
+      "mcp__Vercel__get_toolbar_thread"
+    ],
+    "ask": [
+      "mcp__Vercel__buy_domain",
+      "mcp__Vercel__buy_pro",
+      "mcp__Vercel__buy_credits",
+      "mcp__Vercel__buy_addon",
+      "mcp__Vercel__get_purchase_quote",
+      "mcp__Vercel__check_domain_availability_and_price",
+      "mcp__Vercel__deploy_to_vercel",
+      "mcp__Vercel__create_git_project",
+      "mcp__Vercel__pause_project",
+      "mcp__Vercel__unpause_project",
+      "mcp__Vercel__update_project_deployment_protection",
+      "mcp__Vercel__reply_to_toolbar_thread",
+      "mcp__Vercel__edit_toolbar_message",
+      "mcp__Vercel__add_toolbar_reaction",
+      "mcp__Vercel__change_toolbar_thread_resolve_status",
+      "mcp__Vercel__import-claude-design-from-url"
+    ]
+  }
+}
