@@ -24,7 +24,7 @@ const ITEM_SELECT = `
   *,
   categories ( id, slug, label, icon ),
   locations ( id, name, emoji, color ),
-  household_members ( id, display_name ),
+  household_members!owner_member_id ( id, display_name ),
   item_photos ( id, storage_path, is_primary )
 `
 

@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     .select(
       `id, name, quantity, attributes, condition, purchase_date, purchase_price,
        currency, est_value, warranty_ends_at, expires_at, status, notes, created_at,
-       categories ( slug, label ), locations ( name ), household_members ( display_name )`,
+       categories ( slug, label ), locations ( name ), household_members!owner_member_id ( display_name )`,
     )
     .order('created_at', { ascending: false })
 
