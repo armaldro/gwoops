@@ -260,7 +260,7 @@ function ModerationRow({
         )}
         {post.safety === 'unchecked' && pending && (
           <div className="text-xs" style={{ color: 'var(--warning)' }}>
-            screen unavailable — needs your eyes
+            safety check unavailable — needs your eyes
           </div>
         )}
       </div>

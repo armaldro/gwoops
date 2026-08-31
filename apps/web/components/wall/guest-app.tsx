@@ -224,7 +224,7 @@ export function GuestApp({ token }: { token: string }) {
               maxLength={60}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Aunty Mei, Table 7 Jon…"
+              placeholder="e.g. Aunty Mei or Table 7 Jon"
             />
             {error && (
               <p role="alert" className="mt-3 text-sm" style={{ color: 'var(--danger)' }}>
