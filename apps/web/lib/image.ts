@@ -21,10 +21,13 @@ export interface PreparedImage {
   height: number
 }
 
-export async function prepareImage(file: Blob): Promise<PreparedImage> {
+export async function prepareImage(
+  file: Blob,
+  maxEdge: number = MAX_EDGE,
+): Promise<PreparedImage> {
   const bitmap = await createImageBitmap(file)
 
-  const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height))
+  const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height))
   const width = Math.round(bitmap.width * scale)
   const height = Math.round(bitmap.height * scale)
 
